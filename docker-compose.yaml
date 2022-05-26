@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: ./app_docker/Dockerfile
+    command: >
+      /bin/sh -c "go mod tidy &&
+      air -c .air.toml"
+    tty: true
+    ports:
+      - 8080:8080
+    volumes:
+      # 実際にコーディングする箇所のみマウント
+      - ./app/entities:/go/src/app/entities:cached
+      - ./app/infrastructure:/go/src/app/infrastructure:cached
+      - ./app/interfaces:/go/src/app/interfaces:cached
+      - ./app/usecase:/go/src/app/usecase:cached
+      - ./app/template:/go/src/app/template:cached
+    depends_on:
+      - mysql
+
+  mysql:
+    build: ./mysql_docker
+    volumes:
+      # 初期データを投入するSQLが格納されているディレクトリ
+      - ./mysql_docker/init:/docker-entrypoint-initdb.d
+      # 永続化するときにマウントするディレクトリ
+      - ./mysql_docker/data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=deeptrack
+    ports:
+      - "3306:3306"
+    container_name: mysql-container
