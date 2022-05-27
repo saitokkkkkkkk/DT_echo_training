@@ -20,6 +20,11 @@ services:
       - ./app/template:/go/src/app/template:cached
     depends_on:
       - mysql
+    environment:
+      MYSQL_DATABASE: DeepTrack
+      MYSQL_HOST: mysql-container
+      MYSQL_USER: root
+      MYSQL_PASSWORD: deeptrack
 
   mysql:
     build: ./mysql_docker
