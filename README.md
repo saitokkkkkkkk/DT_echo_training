@@ -40,3 +40,4 @@ docker container exec -it <container_name> sh
 - RDB: MySQL
 - Hot reload tool: Air @latest
 - Container technology: Docker
+- Architecture: MVC
