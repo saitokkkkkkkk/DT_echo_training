@@ -1,7 +1,7 @@
 package main
 
 import (
-	"app/infrastructure/routing"
+	"app/src/infrastructure/routing"
 )
 
 func main() {

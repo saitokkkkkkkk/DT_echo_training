@@ -13,11 +13,7 @@ services:
       - 8080:8080
     volumes:
       # 実際にコーディングする箇所のみマウント
-      - ./app/entities:/go/src/app/entities:cached
-      - ./app/infrastructure:/go/src/app/infrastructure:cached
-      - ./app/interfaces:/go/src/app/interfaces:cached
-      - ./app/usecase:/go/src/app/usecase:cached
-      - ./app/template:/go/src/app/template:cached
+      - ./app/src:/go/src/app/src:cached
     depends_on:
       - mysql
     environment:

@@ -1,8 +1,8 @@
 package controllers
 
 import (
-	"app/infrastructure/sqlhandler"
-	"app/usecase"
+	"app/src/infrastructure/sqlhandler"
+	"app/src/usecase"
 	"github.com/labstack/echo/v4"
 	"log"
 	"net/http"

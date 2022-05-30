@@ -1,8 +1,8 @@
 package routing
 
 import (
-	"app/infrastructure/sqlhandler"
-	"app/interfaces/controllers"
+	"app/src/infrastructure/sqlhandler"
+	"app/src/interfaces/controllers"
 	"github.com/labstack/echo/v4"
 	"net/http"
 )

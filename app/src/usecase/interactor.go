@@ -1,7 +1,7 @@
 package usecase
 
 import (
-	"app/entities"
+	"app/src/entities"
 )
 
 type Interactor struct {
