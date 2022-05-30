@@ -5,7 +5,7 @@ DeepTrack's Echo training sample.
 Preparing Sources
 ```
 cd $WORKDIR
-git@github.com:SeiyaNakamura/DT_echo_training.git
+git clone git@github.com:SeiyaNakamura/DT_echo_training.git
 ```
 
 ## Launching Applications
@@ -40,3 +40,4 @@ docker container exec -it <container_name> sh
 - RDB: MySQL
 - Hot reload tool: Air @latest
 - Container technology: Docker
+- Architecture: Onion Architecture（without DIP）
