@@ -4,20 +4,22 @@ import (
 	"app/src/infrastructure/sqlhandler"
 	"app/src/interfaces/controllers"
 	"github.com/labstack/echo/v4"
-	"net/http"
 )
 
 // このファイルにはリクエストのルーティング処理を実装する
 
 func SetRouting(e *echo.Echo) {
-
 	controller := controllers.NewController(sqlhandler.NewSqlHandler())
 
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, Echo World!!")
-	})
+	// todo一覧表示
+	e.GET("/todos", controller.Index)
 
-	e.GET("/allArticles", func(c echo.Context) error {
-		return controller.Index(c)
-	})
+	// todo新規作成画面を表示
+	e.GET("/todos/new", controller.ShowNewTodoForm)
+
+	// 新規todoを保存
+	e.GET("/todos/new", controller.CreateTodo)
+
+	// todo詳細表示
+	e.GET("/todos/:id", controller.ShowTodoDetails)
 }
