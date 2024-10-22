@@ -18,7 +18,7 @@ func SetRouting(e *echo.Echo) {
 	e.GET("/todos/new", controller.ShowNewTodoForm)
 
 	// 新規todoを保存
-	e.GET("/todos/new", controller.CreateTodo)
+	e.POST("/todos/new", controller.CreateTodo)
 
 	// todo詳細表示
 	e.GET("/todos/:id", controller.ShowTodoDetails)

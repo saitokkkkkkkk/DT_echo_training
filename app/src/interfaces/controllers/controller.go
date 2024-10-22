@@ -1,8 +1,10 @@
 package controllers
 
 import (
+	"app/src/entities"
 	"app/src/infrastructure/sqlhandler"
 	"app/src/usecase"
+	"app/src/validation"
 	"github.com/labstack/echo/v4"
 	"log"
 	"net/http"
@@ -66,15 +68,24 @@ func (c Controller) ShowNewTodoForm(ctx echo.Context) error {
 
 // 新規todoの保存
 func (c Controller) CreateTodo(ctx echo.Context) error {
-	// フォームデータを構造体にバインド
+	// フォームデータに対してバリデーション
 	var request validators.NewTodoRequest
 	if err := ctx.Bind(&request); err != nil {
 		return ctx.String(http.StatusBadRequest, "Invalid input")
 	}
 
+	// リクエストの内容をログに出力
+	log.Printf("Received request: %+v\n", request)
+
+	// DueDateがnilでない場合、その値をログに出力
+	if request.DueDate != nil {
+		log.Printf("DueDate value: %s", *request.DueDate) // ポインタが指している値を表示
+	} else {
+		log.Println("DueDate is nil")
+	}
+
 	// バリデーション
 	if err := request.Validate(); err != nil {
-		// バリデーションエラー時にエラーメッセージを取得
 		return ctx.Render(http.StatusBadRequest, "new_todo.html", map[string]interface{}{
 			"ShowCompletedDate": false,
 			"ValidationErrors":  []string{err.Error()},
@@ -82,10 +93,16 @@ func (c Controller) CreateTodo(ctx echo.Context) error {
 	}
 
 	// 保存するnewTodoを作成
-	newTodo := usecase.Todo{
+	newTodo := entities.Todo{
 		Title:   request.Title,
 		Content: request.Content,
-		DueDate: request.DueDate,
+	}
+
+	//DueDateがnilでも空文字でもなければそのまま代入
+	if *request.DueDate == "" {
+		newTodo.DueDate = nil
+	} else {
+		newTodo.DueDate = request.DueDate
 	}
 
 	// Interactorを使用して新規Todoを保存

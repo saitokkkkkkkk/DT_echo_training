@@ -28,3 +28,11 @@ func (r *Repository) GetTodoByID(id int64) (entities.Todo, error) {
 	}
 	return todo, nil
 }
+
+// 新規Todo保存
+func (r *Repository) CreateTodo(todo entities.Todo) error {
+	if err := r.DB.Create(&todo).Error; err != nil {
+		return err
+	}
+	return nil
+}

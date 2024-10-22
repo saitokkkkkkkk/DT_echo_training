@@ -22,6 +22,7 @@ func (i Interactor) GetTodoByID(id int64) (entities.Todo, error) {
 }
 
 // 新規todo保存
-func (i Interactor) CreateTodo(todo Todo) error {
-	
+func (i Interactor) CreateTodo(todo entities.Todo) error {
+	// Todoを保存するためのロジックをここに書く
+	return i.Repository.CreateTodo(todo)
 }
