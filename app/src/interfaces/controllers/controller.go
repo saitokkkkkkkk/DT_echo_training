@@ -218,10 +218,18 @@ func (c Controller) DeleteTodo(ctx echo.Context) error {
 	return ctx.Redirect(http.StatusSeeOther, "/todos")
 }
 
-/*func (c Controller) BulkDeleteTodos(ctx echo.Context) error {
+// done todo 一括削除
+func (c Controller) BulkDeleteTodos(ctx echo.Context) error {
+	// Interactorを呼ぶ
+	err := c.Interactor.BulkDeleteTodos()
+	if err != nil {
+		return ctx.String(http.StatusInternalServerError, "Failed to delete done Todo")
+	}
 
+	// 一括削除成功後、Todo一覧にリダイレクト
+	return ctx.Redirect(http.StatusSeeOther, "/todos")
 }
-*/
+
 /*会員登録の処理
 func (c Controller) RegisterUser(context echo.Context) error {
 

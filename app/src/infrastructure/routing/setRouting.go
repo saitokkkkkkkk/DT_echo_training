@@ -38,7 +38,7 @@ func SetRouting(e *echo.Echo) {
 	e.POST("/todos/:id/delete", controller.DeleteTodo)
 
 	// 一括削除
-	//e.POST("/todos/bulk-delete", controller.BulkDeleteTodos)
+	e.POST("/todos/bulk-delete", controller.BulkDeleteTodos)
 
 	/* 会員登録の処理
 	e.POST("/register", controller.RegisterUser)*/

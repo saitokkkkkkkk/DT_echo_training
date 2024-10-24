@@ -35,13 +35,13 @@ func (i *Interactor) UpdateTodo(todo entities.Todo) error {
 	return i.Repository.UpdateTodo(todo)
 }
 
-// Interactor の DeleteTodo メソッド
+// todo単体削除
 func (i *Interactor) DeleteTodo(id int64) error {
 	// Repository の DeleteTodo メソッドを呼び出し、エラーをそのまま返す
 	return i.Repository.DeleteTodo(id)
 }
 
 // todo一括削除
-func (i Interactor) BulkDeleteTodos() interface{} {
+func (i *Interactor) BulkDeleteTodos() error {
 	return i.Repository.BulkDeleteTodos()
 }

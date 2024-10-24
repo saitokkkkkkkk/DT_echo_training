@@ -43,6 +43,14 @@ func (r *Repository) UpdateTodo(todo entities.Todo) error {
 	return nil
 }
 
+// 削除
+func (r *Repository) DeleteTodo(id int64) error {
+	if err := r.DB.Delete(&entities.Todo{}, id).Error; err != nil {
+		return err // エラーがあれば返す
+	}
+	return nil // 正常終了
+}
+
 // 一括削除
 func (r *Repository) BulkDeleteTodos() error {
 	// completed_dateがNULLでないレコードを削除
@@ -51,12 +59,4 @@ func (r *Repository) BulkDeleteTodos() error {
 		return result.Error // エラーが発生した場合は返す
 	}
 	return nil // 成功した場合はnilを返す
-}
-
-// 削除
-func (r *Repository) DeleteTodo(id int64) error {
-	if err := r.DB.Delete(&entities.Todo{}, id).Error; err != nil {
-		return err // エラーがあれば返す
-	}
-	return nil // 正常終了
 }
