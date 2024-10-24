@@ -13,11 +13,13 @@ type Interactor struct {
 
 // todo一覧取得
 func (i Interactor) GetAllTodos() (todos []entities.Todo, err error) {
+
 	return i.Repository.GetAllTodos()
 }
 
 // todo取得
 func (i Interactor) GetTodoByID(id int64) (entities.Todo, error) {
+
 	return i.Repository.GetTodoByID(id)
 }
 
@@ -29,5 +31,17 @@ func (i Interactor) CreateTodo(todo entities.Todo) error {
 
 // todoのステータスを更新
 func (i *Interactor) UpdateTodo(todo entities.Todo) error {
+
 	return i.Repository.UpdateTodo(todo)
+}
+
+// Interactor の DeleteTodo メソッド
+func (i *Interactor) DeleteTodo(id int64) error {
+	// Repository の DeleteTodo メソッドを呼び出し、エラーをそのまま返す
+	return i.Repository.DeleteTodo(id)
+}
+
+// todo一括削除
+func (i Interactor) BulkDeleteTodos() interface{} {
+	return i.Repository.BulkDeleteTodos()
 }

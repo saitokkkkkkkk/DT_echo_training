@@ -2,28 +2,52 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Todo App</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
 <div class="container mt-5">
-    <div class="d-flex justify-content-start align-items-center mb-4">
-        <h1>Todo Detail</h1>
+
+    <div class="d-flex align-items-center mb-3">
+        <h1 class="mr-auto">Todo Detail</h1>
+        <!-- 編集ボタン -->
         <a href="/todos/{{ .ID }}/edit" class="btn btn-warning ml-3">Edit</a>
+        <!-- 削除ボタン -->
+        <form action="/todos/{{ .ID }}/delete" method="POST" class="ml-3">
+            <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this todo?');">Delete</button>
+        </form>
     </div>
 
-    <p><strong>Title:</strong> {{ .Title }}</p>
-    <p><strong>Content:</strong> {{ .Content }}</p>
+    <table class="table table-bordered text-left">
+        <tbody>
+        <tr>
+            <th>Title</th>
+            <td>{{ .Title }}</td>
+        </tr>
+        <tr>
+            <th>Content</th>
+            <td>{{ .Content }}</td>
+        </tr>
+        {{ if .DueDate }}
+        <tr>
+            <th>Due Date</th>
+            <td>{{ .DueDate.Format "2006-01-02 15:04" }}</td>
+        </tr>
+        {{ end }}
+        {{ if .CompletedDate }}
+        <tr>
+            <th>Completed Date</th>
+            <td>{{ .CompletedDate.Format "2006-01-02 15:04" }}</td>
+        </tr>
+        {{ end }}
+        </tbody>
+    </table>
 
-    {{ if .CompletedDate }}
-    <p><strong>Completed Date:</strong> {{ .CompletedDate }}</p>
-    {{ end }}
-
-    {{ if .DueDate }}
-    <p><strong>Due Date:</strong> {{ .DueDate }}</p>
-    {{ end }}
-
-    <a href="/todos" class="btn btn-primary">⇦ Back to Todo List</a>
 </div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

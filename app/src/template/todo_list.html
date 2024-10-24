@@ -11,15 +11,35 @@
             cursor: pointer; /* クリック可能なカーソルを追加 */
         }
     </style>
+    <script>
+        // ページが読み込まれた後に実行
+        window.onload = function() {
+            // メッセージが表示されている場合
+            const messageBox = document.getElementById('message-box');
+            if (messageBox) {
+                // 5秒後にメッセージを非表示にする
+                setTimeout(() => {
+                    messageBox.style.display = 'none';
+                }, 5000);
+            }
+        }
+    </script>
 </head>
 <body>
 <div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center">
-        <h3 class="text-left"> Todo List </h3>
-        <div class="text-right mb-3">
+    <div class="d-flex align-items-center mb-3">
+        <h3 class="mr-auto"> Todo List </h3>
+        <div>
             <a href="/todos/new" class="btn btn-primary">Add new todo</a>
         </div>
     </div>
+
+    <!--メッセージがある時-->
+    {{ if .Message }}
+    <div id="message-box" class="alert alert-success" role="alert">
+        {{ .Message }}
+    </div>
+    {{ end }}
 
     <!-- todoがある場合 -->
     {{ if .Todos }}
@@ -38,21 +58,35 @@
 
     <!-- completed_date が null でないデータを下に表示 -->
     <ul class="list-group">
+        {{ $hasCompleted := false }} <!-- 完了したTodoがあるかどうかのフラグ -->
         {{ range .Todos }}
         {{ if .CompletedDate }}
         <li class="list-group-item d-flex justify-content-between align-items-center">
             <a href="/todos/{{ .ID }}">{{ .Title }}</a>
             <span class="status">done</span>
         </li>
+        {{ $hasCompleted = true }} <!-- 完了したTodoが存在する場合、フラグをtrueに設定 -->
         {{ end }}
         {{ end }}
     </ul>
+
+    <!-- 完了したTodoが1つ以上ある場合に一括削除ボタンを表示 -->
+    {{ if $hasCompleted }}
+    <div class="text-right my-2">
+        <form action="/todos/bulk-delete" method="POST" style="display: inline;">
+            <button type="submit" class="btn btn-link text-secondary small" style="text-decoration: none;" onclick="return confirm('Are you sure you want to delete all done todos?');">
+                ✖︎ Delete All Done
+            </button>
+        </form>
+    </div>
+    {{ end }}
 
     <!-- todoがない場合 -->
     {{ else }}
     <ul class="list-group">
         <li class="list-group-item">No todos available.</li>
     </ul>
+    ￼
     {{ end }}
 </div>
 </body>

@@ -193,6 +193,35 @@ func (c Controller) UpdateTodo(ctx echo.Context) error {
 	return ctx.Redirect(http.StatusSeeOther, "/todos")
 }
 
+// todo削除
+func (c Controller) DeleteTodo(ctx echo.Context) error {
+	// URLからIDを取得
+	idStr := ctx.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return ctx.String(http.StatusBadRequest, "Invalid Todo ID")
+	}
+
+	// Interactorを使用して削除処理を実行
+	err = c.Interactor.DeleteTodo(int64(id))
+	if err != nil {
+		return ctx.String(http.StatusInternalServerError, "Failed to delete Todo")
+	}
+
+	/* セッションを取得
+	session := ctx.Get("session").(*sessions.Session)
+	// 成功メッセージをセッションに設定
+	session.Values["message"] = "Deleted successfully"
+	session.Save(ctx.Request(), ctx.Response())*/
+
+	// 成功時、Todo一覧にリダイレクト
+	return ctx.Redirect(http.StatusSeeOther, "/todos")
+}
+
+/*func (c Controller) BulkDeleteTodos(ctx echo.Context) error {
+
+}
+*/
 /*会員登録の処理
 func (c Controller) RegisterUser(context echo.Context) error {
 

@@ -10,8 +10,6 @@ type Repository struct {
 	DB *gorm.DB
 }
 
-// DBからのデータ取得やDBへのinsertなど、DB操作を記述する
-
 // todo一覧取得
 func (r *Repository) GetAllTodos() (todos []entities.Todo, err error) {
 	if err := r.DB.Find(&todos).Error; err != nil {
@@ -43,4 +41,22 @@ func (r *Repository) UpdateTodo(todo entities.Todo) error {
 		return err
 	}
 	return nil
+}
+
+// 一括削除
+func (r *Repository) BulkDeleteTodos() error {
+	// completed_dateがNULLでないレコードを削除
+	result := r.DB.Where("completed_date IS NOT NULL").Delete(&entities.Todo{})
+	if result.Error != nil {
+		return result.Error // エラーが発生した場合は返す
+	}
+	return nil // 成功した場合はnilを返す
+}
+
+// 削除
+func (r *Repository) DeleteTodo(id int64) error {
+	if err := r.DB.Delete(&entities.Todo{}, id).Error; err != nil {
+		return err // エラーがあれば返す
+	}
+	return nil // 正常終了
 }
