@@ -36,3 +36,11 @@ func (r *Repository) CreateTodo(todo entities.Todo) error {
 	}
 	return nil
 }
+
+// todoのステータスを更新
+func (r *Repository) UpdateTodoStatus(todo entities.Todo) error {
+	if err := r.DB.Save(&todo).Error; err != nil {
+		return err
+	}
+	return nil
+}

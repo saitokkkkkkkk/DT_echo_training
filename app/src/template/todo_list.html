@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <title>Todo App</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .status {
+            color: red;
+            font-weight: bold;
+            cursor: pointer; /* クリック可能なカーソルを追加 */
+        }
+    </style>
+    <script src="/static/todo.js"></script>
 </head>
 <body>
 <div class="container mt-5">
@@ -13,19 +21,40 @@
             <a href="/todos/new" class="btn btn-primary">Add new todo</a>
         </div>
     </div>
-    <ul class="list-group">
-        <!--todoがあればリスト表示-->
-        {{ if .Todos }}
+
+    <!-- todoがある場合 -->
+    {{ if .Todos }}
+
+    <!-- completed_date が null のデータを上に表示 -->
+    <ul class="list-group mb-4">
         {{ range .Todos }}
-        <li class="list-group-item">
+        {{ if not .CompletedDate }}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
             <a href="/todos/{{ .ID }}">{{ .Title }}</a>
+            <span class="status">undone</span>
         </li>
         {{ end }}
-        <!--todoがない時-->
-        {{ else }}
-        <li class="list-group-item">No todos available.</li>
         {{ end }}
     </ul>
+
+    <!-- completed_date が null でないデータを下に表示 -->
+    <ul class="list-group">
+        {{ range .Todos }}
+        {{ if .CompletedDate }}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <a href="/todos/{{ .ID }}">{{ .Title }}</a>
+            <span class="status">done</span>
+        </li>
+        {{ end }}
+        {{ end }}
+    </ul>
+
+    <!-- todoがない場合 -->
+    {{ else }}
+    <ul class="list-group">
+        <li class="list-group-item">No todos available.</li>
+    </ul>
+    {{ end }}
 </div>
 </body>
 </html>

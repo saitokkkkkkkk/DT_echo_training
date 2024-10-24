@@ -26,3 +26,8 @@ func (i Interactor) CreateTodo(todo entities.Todo) error {
 	// Todoを保存するためのロジックをここに書く
 	return i.Repository.CreateTodo(todo)
 }
+
+// todoのステータスを更新
+func (i *Interactor) UpdateTodoStatus(todo entities.Todo) error {
+	return i.Repository.UpdateTodoStatus(todo)
+}
