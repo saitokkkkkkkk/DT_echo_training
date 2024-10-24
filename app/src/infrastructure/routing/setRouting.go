@@ -28,6 +28,12 @@ func SetRouting(e *echo.Echo) {
 		return c.File("template/register.html")
 	})
 
+	// 編集画面の表示
+	e.GET("/todos/:id/edit", controller.ShowTodoEdit)
+
+	// 編集後の更新
+	e.POST("/todos/:id/update", controller.UpdateTodo)
+
 	/* 会員登録の処理
 	e.POST("/register", controller.RegisterUser)*/
 }

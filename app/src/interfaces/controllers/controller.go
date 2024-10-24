@@ -9,7 +9,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
+	"time"
 )
 
 // コントローラ型の構造体を作成⇨レシーバとして使用
@@ -54,14 +54,6 @@ func (c Controller) ShowTodoDetails(ctx echo.Context) error {
 	if err != nil {
 		log.Print(err)
 		return ctx.String(http.StatusNotFound, "Todo not found")
-	}
-
-	// CompletedDateとDueDateを空文字に置換
-	if todo.CompletedDate != nil {
-		*todo.CompletedDate = strings.Replace(strings.Replace(*todo.CompletedDate, "T", " ", 1), "Z", "", 1)
-	}
-	if todo.DueDate != nil {
-		*todo.DueDate = strings.Replace(strings.Replace(*todo.DueDate, "T", " ", 1), "Z", "", 1)
 	}
 
 	return ctx.Render(http.StatusOK, "todo_detail.html", todo) // 詳細表示用のHTMLを返す
@@ -115,13 +107,6 @@ func (c Controller) CreateTodo(ctx echo.Context) error {
 		Content: request.Content,
 	}
 
-	//DueDateがnilでも空文字でもなければそのまま代入
-	if *request.DueDate == "" {
-		newTodo.DueDate = nil
-	} else {
-		newTodo.DueDate = request.DueDate
-	}
-
 	// Interactorを使用して新規Todoを保存
 	if err := c.Interactor.CreateTodo(newTodo); err != nil {
 		log.Print(err)
@@ -132,60 +117,80 @@ func (c Controller) CreateTodo(ctx echo.Context) error {
 	return ctx.Redirect(http.StatusSeeOther, "/todos")
 }
 
-// ToggleTodoStatus handles the toggling of the todo status
-func (c *Controller) ToggleTodoStatus(ctx echo.Context) error {
-	idParam := ctx.Param("id")
-	todoID, err := strconv.Atoi(idParam)
+// todoの編集画面の表示
+func (c Controller) ShowTodoEdit(ctx echo.Context) error {
+	id, err := strconv.Atoi(ctx.Param("id")) // URLからIDを取得
 	if err != nil {
 		log.Print(err)
-		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid ID"})
+		return ctx.String(http.StatusBadRequest, "Invalid ID")
 	}
 
-	// 完了時間を取得
-	completionTime := ctx.FormValue("completionTime")
-
-	// todoの取得
-	todo, err := c.Interactor.GetTodoByID(int64(todoID))
+	todo, err := c.Interactor.GetTodoByID(int64(id)) // Interactorを使ってTodoを取得
 	if err != nil {
 		log.Print(err)
-		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "Todo not found"})
+		return ctx.String(http.StatusNotFound, "Todo not found")
 	}
 
-	// ステータスをトグル
-	if completionTime == "" { // undoneに変更
-		todo.CompletedDate = nil
-	} else { // doneに変更
-		todo.CompletedDate = &completionTime
-	}
-
-	// データベースに保存
-	err = c.Interactor.UpdateTodoStatus(todo)
-	if err != nil {
-		log.Print(err)
-		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to update status"})
-	}
-
-	// 新しいステータスを返す
-	status := "undone"
-	if todo.CompletedDate != nil {
-		status = "done"
-	}
-	return ctx.JSON(http.StatusOK, map[string]string{"status": status})
+	return ctx.Render(http.StatusOK, "todo_edit.html", todo) // 編集画面のHTMLを返す
 }
 
-func (c *Controller) GetTodoByID(ctx echo.Context) error {
-	idParam := ctx.Param("id")
-	todoID, err := strconv.Atoi(idParam)
+// todoの更新
+func (c Controller) UpdateTodo(ctx echo.Context) error {
+	// URLからIDを取得
+	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid ID"})
+		log.Print(err)
+		return ctx.String(http.StatusBadRequest, "Invalid ID")
 	}
 
-	todo, err := c.Interactor.GetTodoByID(int64(todoID))
+	// 更新するTodoの既存データを取得
+	todo, err := c.Interactor.GetTodoByID(int64(id))
 	if err != nil {
-		return ctx.JSON(http.StatusNotFound, map[string]string{"error": "Todo not found"})
+		log.Print(err)
+		return ctx.String(http.StatusInternalServerError, "Failed to find Todo")
 	}
 
-	return ctx.JSON(http.StatusOK, todo) // TodoオブジェクトをJSON形式で返す
+	// フォームから送信されたデータを取得
+	title := ctx.FormValue("title")
+	content := ctx.FormValue("content")
+	dueDateStr := ctx.FormValue("due_date")
+	completedDateStr := ctx.FormValue("completed_date")
+
+	// フォームデータをTodoに反映
+	todo.Title = title
+	todo.Content = content
+
+	// 日付データの変換
+	if dueDateStr != "" {
+		dueDate, err := time.Parse("2006-01-02T15:04", dueDateStr)
+		if err != nil {
+			log.Print(err)
+			return ctx.String(http.StatusBadRequest, "Invalid Due Date format")
+		}
+		todo.DueDate = &dueDate
+	} else {
+		todo.DueDate = nil // 日付が未入力の場合、nilにする
+	}
+
+	if completedDateStr != "" {
+		completedDate, err := time.Parse("2006-01-02T15:04", completedDateStr)
+		if err != nil {
+			log.Print(err)
+			return ctx.String(http.StatusBadRequest, "Invalid Completed Date format")
+		}
+		todo.CompletedDate = &completedDate
+	} else {
+		todo.CompletedDate = nil // 日付が未入力の場合、nilにする
+	}
+
+	// Interactorを使用してTodoを更新
+	if err := c.Interactor.UpdateTodo(todo); err != nil {
+		log.Print(err)
+		return ctx.String(http.StatusInternalServerError, "Failed to update Todo")
+	}
+
+	// 更新後、一覧ページにリダイレクト
+	return ctx.Redirect(http.StatusSeeOther, "/todos")
 }
 
 /*会員登録の処理

@@ -16,7 +16,7 @@ func (i Interactor) GetAllTodos() (todos []entities.Todo, err error) {
 	return i.Repository.GetAllTodos()
 }
 
-// todo詳細取得
+// todo取得
 func (i Interactor) GetTodoByID(id int64) (entities.Todo, error) {
 	return i.Repository.GetTodoByID(id)
 }
@@ -28,6 +28,6 @@ func (i Interactor) CreateTodo(todo entities.Todo) error {
 }
 
 // todoのステータスを更新
-func (i *Interactor) UpdateTodoStatus(todo entities.Todo) error {
-	return i.Repository.UpdateTodoStatus(todo)
+func (i *Interactor) UpdateTodo(todo entities.Todo) error {
+	return i.Repository.UpdateTodo(todo)
 }

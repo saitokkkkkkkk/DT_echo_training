@@ -20,7 +20,7 @@ func (r *Repository) GetAllTodos() (todos []entities.Todo, err error) {
 	return todos, nil
 }
 
-// todo詳細取得
+// todo取得
 func (r *Repository) GetTodoByID(id int64) (entities.Todo, error) {
 	var todo entities.Todo
 	if err := r.DB.First(&todo, id).Error; err != nil {
@@ -38,7 +38,7 @@ func (r *Repository) CreateTodo(todo entities.Todo) error {
 }
 
 // todoのステータスを更新
-func (r *Repository) UpdateTodoStatus(todo entities.Todo) error {
+func (r *Repository) UpdateTodo(todo entities.Todo) error {
 	if err := r.DB.Save(&todo).Error; err != nil {
 		return err
 	}
