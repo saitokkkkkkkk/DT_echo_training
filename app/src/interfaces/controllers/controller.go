@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 // コントローラ型の構造体を作成⇨レシーバとして使用
@@ -53,6 +54,14 @@ func (c Controller) ShowTodoDetails(ctx echo.Context) error {
 	if err != nil {
 		log.Print(err)
 		return ctx.String(http.StatusNotFound, "Todo not found")
+	}
+
+	// CompletedDateとDueDateを空文字に置換
+	if todo.CompletedDate != nil {
+		*todo.CompletedDate = strings.Replace(strings.Replace(*todo.CompletedDate, "T", " ", 1), "Z", "", 1)
+	}
+	if todo.DueDate != nil {
+		*todo.DueDate = strings.Replace(strings.Replace(*todo.DueDate, "T", " ", 1), "Z", "", 1)
 	}
 
 	return ctx.Render(http.StatusOK, "todo_detail.html", todo) // 詳細表示用のHTMLを返す

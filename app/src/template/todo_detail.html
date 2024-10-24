@@ -7,10 +7,22 @@
 </head>
 <body>
 <div class="container mt-5">
-    <h1>Todo Detail</h1>
-    <p><strong>ID:</strong> {{ .ID }}</p>
+    <div class="d-flex justify-content-start align-items-center mb-4">
+        <h1>Todo Detail</h1>
+        <a href="/todos/{{ .ID }}/edit" class="btn btn-warning ml-3">Edit</a>
+    </div>
+
     <p><strong>Title:</strong> {{ .Title }}</p>
     <p><strong>Content:</strong> {{ .Content }}</p>
+
+    {{ if .CompletedDate }}
+    <p><strong>Completed Date:</strong> {{ .CompletedDate }}</p>
+    {{ end }}
+
+    {{ if .DueDate }}
+    <p><strong>Due Date:</strong> {{ .DueDate }}</p>
+    {{ end }}
+
     <a href="/todos" class="btn btn-primary">⇦ Back to Todo List</a>
 </div>
 </body>
