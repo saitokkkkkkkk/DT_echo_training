@@ -5,6 +5,7 @@ import (
 	"app/src/infrastructure/sqlhandler"
 	"app/src/usecase"
 	"app/src/validation"
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"log"
 	"net/http"
@@ -228,6 +229,51 @@ func (c Controller) BulkDeleteTodos(ctx echo.Context) error {
 
 	// 一括削除成功後、Todo一覧にリダイレクト
 	return ctx.Redirect(http.StatusSeeOther, "/todos")
+}
+
+// doneとundoneのステータス更新
+func (c Controller) UpdateTodoStatus(ctx echo.Context) error {
+	//URLからidを取得
+	idStr := ctx.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		fmt.Println("Invalid ID:", idStr)
+		// JSON形式で返却
+		return ctx.JSON(http.StatusBadRequest, map[string]interface{}{
+			"ok":    false,
+			"error": "Invalid ID",
+		})
+	}
+
+	//int⇨int64にする
+	todoId := int64(id)
+
+	//変更されたステータスをリクエストボディから取得して構造体にバインド
+	var statusUpdate struct {
+		Status string `json:"status"`
+	}
+	if err := ctx.Bind(&statusUpdate); err != nil {
+		fmt.Println("Bind error:", err)
+		return ctx.JSON(http.StatusBadRequest, map[string]interface{}{
+			"ok":    false,
+			"error": "Invalid ID",
+		})
+	}
+
+	// インタラクターを使用してステータス更新
+	err = c.Interactor.UpdateTodoStatus(todoId, statusUpdate.Status)
+	if err != nil {
+		fmt.Println("Update status error:", err)
+		return ctx.JSON(http.StatusInternalServerError, map[string]interface{}{
+			"ok":    false,
+			"error": "Failed to update status",
+		})
+	}
+
+	return ctx.JSON(http.StatusOK, map[string]interface{}{
+		"ok":     true,
+		"status": statusUpdate.Status,
+	})
 }
 
 /*会員登録の処理

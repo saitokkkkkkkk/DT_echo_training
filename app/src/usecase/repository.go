@@ -3,6 +3,7 @@ package usecase
 import (
 	"app/src/entities"
 	"gorm.io/gorm"
+	"time"
 )
 
 // リポジトリ型の構造体を作成⇨レシーバで使用
@@ -59,4 +60,25 @@ func (r *Repository) BulkDeleteTodos() error {
 		return result.Error // エラーが発生した場合は返す
 	}
 	return nil // 成功した場合はnilを返す
+}
+
+// completed_atを設定するメソッド
+func (r *Repository) SetCompletedAt(id int64, completedAt time.Time) error {
+	todo := &entities.Todo{
+		ID:            id,
+		CompletedDate: &completedAt, // ポインタを使用して、NULLが必要な場合の対応
+	}
+	if err := r.DB.Model(todo).Update("completed_date", todo.CompletedDate).Error; err != nil {
+		return err // エラーがあれば返す
+	}
+	return nil // 正常終了
+}
+
+// completed_atをNULLに設定するメソッド
+func (r *Repository) SetCompletedAtNull(id int64) error {
+	todo := &entities.Todo{ID: id}
+	if err := r.DB.Model(todo).Update("completed_date", nil).Error; err != nil {
+		return err // エラーがあれば返す
+	}
+	return nil // 正常終了
 }

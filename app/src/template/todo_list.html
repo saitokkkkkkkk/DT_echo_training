@@ -4,31 +4,25 @@
     <meta charset="UTF-8">
     <title>Todo App</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
     <style>
         .status {
-            color: red;
             font-weight: bold;
             cursor: pointer; /* クリック可能なカーソルを追加 */
         }
-    </style>
-    <script>
-        // ページが読み込まれた後に実行
-        window.onload = function() {
-            // メッセージが表示されている場合
-            const messageBox = document.getElementById('message-box');
-            if (messageBox) {
-                // 5秒後にメッセージを非表示にする
-                setTimeout(() => {
-                    messageBox.style.display = 'none';
-                }, 5000);
-            }
+        .status.done {
+            color: blue; /* doneの時は青 */
         }
-    </script>
+        .status.undone {
+            color: red; /* undoneの時は赤 */
+        }
+    </style>
+
 </head>
 <body>
 <div class="container mt-5">
     <div class="d-flex align-items-center mb-3">
-        <h3 class="mr-auto"> Todo List </h3>
+        <h3 class="mr-auto"> Your Todos </h3>
         <div>
             <a href="/todos/new" class="btn btn-primary">Add new todo</a>
         </div>
@@ -44,31 +38,40 @@
     <!-- todoがある場合 -->
     {{ if .Todos }}
 
-    <!-- completed_date が null のデータを上に表示 -->
+    <!-- undoneのTodo -->
     <ul class="list-group mb-4">
         {{ range .Todos }}
         {{ if not .CompletedDate }}
         <li class="list-group-item d-flex justify-content-between align-items-center">
             <a href="/todos/{{ .ID }}">{{ .Title }}</a>
-            <span class="status">undone</span>
+            <span class="status undone" data-id="{{ .ID }}" data-status="undone" onclick="toggleStatus(this)">undone</span>
+            <div class="status-options" style="display: none;">
+                <span class="status-option" onclick="updateStatus('{{ .ID }}', 'done')">done</span> |
+                <span class="status-option" onclick="updateStatus('{{ .ID }}', 'undone')">undone</span>
+            </div>
         </li>
         {{ end }}
         {{ end }}
     </ul>
 
-    <!-- completed_date が null でないデータを下に表示 -->
+    <!-- doneのTodo -->
     <ul class="list-group">
-        {{ $hasCompleted := false }} <!-- 完了したTodoがあるかどうかのフラグ -->
+        {{ $hasCompleted := false }}
         {{ range .Todos }}
         {{ if .CompletedDate }}
         <li class="list-group-item d-flex justify-content-between align-items-center">
             <a href="/todos/{{ .ID }}">{{ .Title }}</a>
-            <span class="status">done</span>
+            <span class="status done" data-id="{{ .ID }}" data-status="done" onclick="toggleStatus(this)">done</span>
+            <div class="status-options" style="display: none;">
+                <span class="status-option" onclick="updateStatus('{{ .ID }}', 'done')">done</span> |
+                <span class="status-option" onclick="updateStatus('{{ .ID }}', 'undone')">undone</span>
+            </div>
+            {{ $hasCompleted = true }}
         </li>
-        {{ $hasCompleted = true }} <!-- 完了したTodoが存在する場合、フラグをtrueに設定 -->
         {{ end }}
         {{ end }}
     </ul>
+
 
     <!-- 完了したTodoが1つ以上ある場合に一括削除ボタンを表示 -->
     {{ if $hasCompleted }}
@@ -89,5 +92,64 @@
     ￼
     {{ end }}
 </div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+<script>
+    function toggleStatus(element) {
+        const todoId = element.getAttribute('data-id');
+        const currentStatus = element.getAttribute('data-status');
+
+        // 新しいステータスを決定
+        const newStatus = currentStatus === 'done' ? 'undone' : 'done';
+
+        // AJAXリクエストを送信
+        fetch(`/todos/${todoId}/status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json(); // 正常なJSONレスポンスを期待
+            })
+            .then(data => {
+                if (data.ok) {
+                    // ステータスの表示を更新
+                    element.innerText = newStatus;
+                    element.setAttribute('data-status', newStatus);
+
+                    // クラスの更新
+                    if (newStatus === 'done') {
+                        element.classList.remove('undone');
+                        element.classList.add('done');
+
+                        // 現在のリストから削除
+                        const todoItem = element.parentElement; // 親のリストアイテムを取得
+                        const doneList = document.querySelector('.list-group:last-of-type'); // doneリストを取得
+                        doneList.appendChild(todoItem); // doneリストに追加
+                    } else {
+                        element.classList.remove('done');
+                        element.classList.add('undone');
+
+                        // 現在のリストから削除
+                        const todoItem = element.parentElement; // 親のリストアイテムを取得
+                        const undoneList = document.querySelector('.list-group.mb-4'); // undoneリストを取得
+                        undoneList.appendChild(todoItem); // undoneリストに追加
+                    }
+                } else {
+                    alert('ステータスの更新に失敗しました');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+</script>
+
 </body>
 </html>

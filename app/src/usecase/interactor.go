@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"app/src/entities"
+	"errors"
+	"time"
 )
 
 type Interactor struct {
@@ -44,4 +46,14 @@ func (i *Interactor) DeleteTodo(id int64) error {
 // todo一括削除
 func (i *Interactor) BulkDeleteTodos() error {
 	return i.Repository.BulkDeleteTodos()
+}
+
+// done, undoneのステータス更新
+func (i *Interactor) UpdateTodoStatus(id int64, status string) error {
+	if status == "done" {
+		return i.Repository.SetCompletedAt(id, time.Now())
+	} else if status == "undone" {
+		return i.Repository.SetCompletedAtNull(id)
+	}
+	return errors.New("Invalid status or id")
 }
