@@ -14,20 +14,22 @@
             <label for="title">Title</label>
             <input type="text" class="form-control" id="title" name="title" required>
         </div>
+
         <div class="form-group">
             <label for="content">Content</label>
             <textarea class="form-control" id="content" name="content" rows="3" required></textarea>
         </div>
+
         <div class="form-group">
             <label for="due_date">Due Date</label>
             <input type="datetime-local" class="form-control" id="due_date" name="DueDate">
         </div>
-        <!--{{ if .ShowCompletedDate }}-->
+
         <div class="form-group">
             <label for="completed_date">Completion Date</label>
-            <input type="datetime-local" class="form-control" id="completed_date" name="completed_date">
+            <input type="datetime-local" class="form-control" id="completed_date" name="CompletedDate">
         </div>
-        <!--{{ end }}-->
+
         <div class="text-right">
             <button type="submit" class="btn btn-primary">Create</button>
         </div>

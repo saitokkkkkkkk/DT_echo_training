@@ -15,7 +15,9 @@ func SetRouting(e *echo.Echo) {
 	e.GET("/todos", controller.Index)
 
 	// todo新規作成画面を表示
-	e.GET("/todos/new", controller.ShowNewTodoForm)
+	e.GET("/todos/new", func(c echo.Context) error {
+		return c.File("template/new_todo.html")
+	})
 
 	// 新規todoを保存
 	e.POST("/todos/new", controller.CreateTodo)
@@ -23,10 +25,10 @@ func SetRouting(e *echo.Echo) {
 	// todo詳細表示
 	e.GET("/todos/:id", controller.ShowTodoDetails)
 
-	// 会員登録画面の表示
+	/* 会員登録画面の表示
 	e.GET("/register", func(c echo.Context) error {
 		return c.File("template/register.html")
-	})
+	})*/
 
 	// 編集画面の表示
 	e.GET("/todos/:id/edit", controller.ShowTodoEdit)

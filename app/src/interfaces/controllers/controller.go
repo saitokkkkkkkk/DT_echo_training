@@ -37,9 +37,19 @@ func (c Controller) Index(ctx echo.Context) error {
 		return ctx.Render(http.StatusInternalServerError, "todo_list.html", nil)
 	}
 
+	// 完了したTodoが1つ以上あるか確認
+	hasCompleted := false
+	for _, todo := range todos {
+		if todo.CompletedDate != nil {
+			hasCompleted = true
+			break
+		}
+	}
+
 	// todosをマップに変換して渡す
 	return ctx.Render(http.StatusOK, "todo_list.html", map[string]interface{}{
-		"Todos": todos, // "Todos"というキーで渡す
+		"Todos":        todos,
+		"HasCompleted": hasCompleted, // 完了済みTodoが1つ以上あるかを渡す
 	})
 }
 
@@ -58,14 +68,6 @@ func (c Controller) ShowTodoDetails(ctx echo.Context) error {
 	}
 
 	return ctx.Render(http.StatusOK, "todo_detail.html", todo) // 詳細表示用のHTMLを返す
-}
-
-// todo新規作成画面の表示
-func (c Controller) ShowNewTodoForm(ctx echo.Context) error {
-	showCompletedDate := false
-	return ctx.Render(http.StatusOK, "new_todo.html", map[string]interface{}{
-		"ShowCompletedDate": showCompletedDate,
-	})
 }
 
 // 新規todoの保存
@@ -233,22 +235,21 @@ func (c Controller) BulkDeleteTodos(ctx echo.Context) error {
 
 // doneとundoneのステータス更新
 func (c Controller) UpdateTodoStatus(ctx echo.Context) error {
-	//URLからidを取得
+	// URLからidを取得
 	idStr := ctx.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		fmt.Println("Invalid ID:", idStr)
-		// JSON形式で返却
 		return ctx.JSON(http.StatusBadRequest, map[string]interface{}{
 			"ok":    false,
 			"error": "Invalid ID",
 		})
 	}
 
-	//int⇨int64にする
+	// int⇨int64にする
 	todoId := int64(id)
 
-	//変更されたステータスをリクエストボディから取得して構造体にバインド
+	// 変更されたステータスをリクエストボディから取得して構造体にバインド
 	var statusUpdate struct {
 		Status string `json:"status"`
 	}
@@ -270,9 +271,30 @@ func (c Controller) UpdateTodoStatus(ctx echo.Context) error {
 		})
 	}
 
+	// ステータス更新後に全てのTodoを取得
+	todos, err := c.Interactor.GetAllTodos()
+	if err != nil {
+		log.Print(err)
+		return ctx.JSON(http.StatusInternalServerError, map[string]interface{}{
+			"ok":    false,
+			"error": "Failed to fetch todos",
+		})
+	}
+
+	// 完了したTodoが1つ以上あるか確認
+	hasCompleted := false
+	for _, todo := range todos {
+		if todo.CompletedDate != nil {
+			hasCompleted = true
+			break
+		}
+	}
+
+	// 更新結果とhasCompletedを返却
 	return ctx.JSON(http.StatusOK, map[string]interface{}{
-		"ok":     true,
-		"status": statusUpdate.Status,
+		"ok":           true,
+		"status":       statusUpdate.Status,
+		"hasCompleted": hasCompleted, // 完了したTodoの状態を返す
 	})
 }
 

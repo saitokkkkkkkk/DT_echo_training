@@ -16,6 +16,11 @@
         .status.undone {
             color: red; /* undoneの時は赤 */
         }
+
+        .highlight {
+            background-color: lightgray; /* 薄いグレー色 */
+            transition: background-color 0.3s ease; /* なめらかな変化 */
+        }
     </style>
 
 </head>
@@ -72,17 +77,23 @@
         {{ end }}
     </ul>
 
-
-    <!-- 完了したTodoが1つ以上ある場合に一括削除ボタンを表示 -->
-    {{ if $hasCompleted }}
-    <div class="text-right my-2">
-        <form action="/todos/bulk-delete" method="POST" style="display: inline;">
-            <button type="submit" class="btn btn-link text-secondary small" style="text-decoration: none;" onclick="return confirm('Are you sure you want to delete all done todos?');">
+    {{ if .HasCompleted }}
+    <div class="text-right my-2 d-flex justify-content-end">
+        <form action="/todos/bulk-delete" method="POST" style="display: inline;" class="bulk-delete-form">
+            <button type="submit" class="btn btn-link text-secondary small bulk-delete-button" style="text-decoration: none;" onclick="confirmBulkDelete(event)">
                 ✖︎ Delete All Done
             </button>
         </form>
     </div>
     {{ end }}
+
+    <div class="text-right my-2 d-flex justify-content-end">
+        <form action="/todos/bulk-delete" method="POST" style="display: inline;" class="bulk-delete-form">
+            <button type="submit" class="btn btn-link text-secondary small bulk-delete-button" style="text-decoration: none; display: none;" onclick="confirmBulkDelete(event)">
+                ✖︎ Delete All Done
+            </button>
+        </form>
+    </div>
 
     <!-- todoがない場合 -->
     {{ else }}
@@ -96,14 +107,26 @@
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 <script>
+    //一括削除のconfirm
+    function confirmBulkDelete(event) {
+        event.preventDefault(); // デフォルトのフォーム送信を防ぐ
+
+        // 確認ボックスを表示
+        const confirmed = confirm('Are you sure you want to delete all completed tasks?');
+
+        if (confirmed) {
+            // ユーザーがOKを押した場合、親フォームを送信
+            const form = event.target.closest('form'); // ボタンが属するフォームを取得
+            form.submit();
+        }
+    }
+
+    // ステータス変更の処理
     function toggleStatus(element) {
         const todoId = element.getAttribute('data-id');
         const currentStatus = element.getAttribute('data-status');
-
-        // 新しいステータスを決定
         const newStatus = currentStatus === 'done' ? 'undone' : 'done';
 
-        // AJAXリクエストを送信
         fetch(`/todos/${todoId}/status`, {
             method: 'PUT',
             headers: {
@@ -115,32 +138,36 @@
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
                 }
-                return response.json(); // 正常なJSONレスポンスを期待
+                return response.json();
             })
             .then(data => {
                 if (data.ok) {
-                    // ステータスの表示を更新
+                    // ステータス更新
                     element.innerText = newStatus;
                     element.setAttribute('data-status', newStatus);
 
-                    // クラスの更新
+                    const todoItem = element.parentElement;
+                    const doneList = document.querySelector('.list-group:last-of-type');
+                    const undoneList = document.querySelector('.list-group.mb-4');
+
                     if (newStatus === 'done') {
                         element.classList.remove('undone');
                         element.classList.add('done');
-
-                        // 現在のリストから削除
-                        const todoItem = element.parentElement; // 親のリストアイテムを取得
-                        const doneList = document.querySelector('.list-group:last-of-type'); // doneリストを取得
-                        doneList.appendChild(todoItem); // doneリストに追加
+                        doneList.appendChild(todoItem);
                     } else {
                         element.classList.remove('done');
                         element.classList.add('undone');
-
-                        // 現在のリストから削除
-                        const todoItem = element.parentElement; // 親のリストアイテムを取得
-                        const undoneList = document.querySelector('.list-group.mb-4'); // undoneリストを取得
-                        undoneList.appendChild(todoItem); // undoneリストに追加
+                        undoneList.appendChild(todoItem);
                     }
+
+                    // ステータス変更されたアイテムにハイライトクラスを追加
+                    todoItem.classList.add('highlight');
+                    setTimeout(() => {
+                        todoItem.classList.remove('highlight'); // 1秒後にクラスを削除
+                    }, 1000);
+
+                    // 一括削除ボタンの表示を更新
+                    updateBulkDeleteButton(data.hasCompleted);
                 } else {
                     alert('ステータスの更新に失敗しました');
                 }
@@ -149,6 +176,21 @@
                 console.error('Error:', error);
             });
     }
+    // 一括削除ボタンの表示、非表示のロジック
+    function updateBulkDeleteButton(hasCompleted) {
+        const bulkDeleteButton = document.querySelector('.bulk-delete-button');
+        if (!bulkDeleteButton) {
+            console.warn('Bulk delete button not found.');
+            return; // ボタンの存在が認識されておらず、それに対してstyleを効かせられていない
+        }
+
+        if (hasCompleted) {
+            bulkDeleteButton.style.display = 'block'; // ボタンを表示
+        } else {
+            bulkDeleteButton.style.display = 'none'; // ボタンを非表示
+        }
+    }
+
 </script>
 
 </body>
