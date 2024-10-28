@@ -33,13 +33,11 @@
         </div>
         <div class="form-group">
             <label for="dueDate">Due Date:</label>
-            <input type="datetime-local" id="dueDate" name="due_date" class="form-control"
-                   value="{{ if .DueDate }}{{ .DueDate.Format "2006-01-02 15:04" }}{{ end }}">
+            <input type="date" id="dueDate" name="due_date" class="form-control" value="{{ if .DueDate }}{{ .DueDate.Format "2006-01-02" }}{{ end }}">
         </div>
         <div class="form-group">
             <label for="completedDate">Completed Date:</label>
-            <input type="datetime-local" id="completedDate" name="completed_date" class="form-control"
-                   value="{{ if .CompletedDate }}{{ .CompletedDate.Format "2006-01-02 15:04" }}{{ end }}">
+            <input type="date" id="completedDate" name="completed_date" class="form-control" value="{{ if .CompletedDate }}{{ .CompletedDate.Format "2006-01-02" }}{{ end }}">
         </div>
         <div class="text-right">
             <button type="submit" class="btn btn-primary">Update Todo</button>

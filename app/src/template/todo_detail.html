@@ -32,13 +32,13 @@
         {{ if .DueDate }}
         <tr>
             <th>Due Date</th>
-            <td>{{ .DueDate.Format "2006-01-02 15:04" }}</td>
+            <td>{{ .DueDate.Format "2006-01-02" }}</td>
         </tr>
         {{ end }}
         {{ if .CompletedDate }}
         <tr>
             <th>Completed Date</th>
-            <td>{{ .CompletedDate.Format "2006-01-02 15:04" }}</td>
+            <td>{{ .CompletedDate.Format "2006-01-02" }}</td>
         </tr>
         {{ end }}
         </tbody>
