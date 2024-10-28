@@ -153,7 +153,8 @@
                     if (newStatus === 'done') {
                         element.classList.remove('undone');
                         element.classList.add('done');
-                        doneList.appendChild(todoItem);
+                        //insertBefore()を使って、変更したレコードをdoneの最上部に移動させる
+                        doneList.insertBefore(todoItem, doneList.firstChild);
                     } else {
                         element.classList.remove('done');
                         element.classList.add('undone');
