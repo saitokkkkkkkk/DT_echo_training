@@ -4,7 +4,6 @@ import (
 	"app/src/entities"
 	"app/src/infrastructure/sqlhandler"
 	"app/src/usecase"
-	"fmt"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo/v4"
 	"log"
@@ -96,10 +95,34 @@ func (c Controller) CreateTodo(ctx echo.Context) error {
 	dueDateStr := ctx.FormValue("due_date")
 	completedDateStr := ctx.FormValue("completed_date")
 
-	// Todo構造体を作成
-	todo, err := c.prepareTodo(title, content, dueDateStr, completedDateStr)
-	if err != nil {
-		return ctx.String(http.StatusBadRequest, err.Error())
+	const layout = "2006-01-02"
+	var dueDate, completedDate *time.Time
+
+	// DueDateの処理
+	if dueDateStr != "" {
+		t, err := time.Parse(layout, dueDateStr)
+		if err != nil {
+			return ctx.String(http.StatusBadRequest, "Invalid due date format.")
+		}
+		dueDate = &t
+	}
+
+	// CompletedDateの処理
+	if completedDateStr != "" {
+		t, err := time.Parse(layout, completedDateStr)
+		if err != nil {
+			return ctx.String(http.StatusBadRequest, "Invalid completed date format.")
+		}
+		completedDate = &t
+	}
+
+	// Todo構造体にデータを詰める
+	todo := entities.Todo{
+		Title:         title,
+		Content:       content,
+		DueDate:       dueDate,
+		CompletedDate: completedDate,
+		CreatedAt:     time.Now(), // 作成日時を現在の時刻で設定
 	}
 
 	// インタラクターを呼び出してTodoを保存
@@ -116,40 +139,6 @@ func (c Controller) CreateTodo(ctx echo.Context) error {
 
 	// 一覧画面にリダイレクト
 	return ctx.Redirect(http.StatusSeeOther, "/todos")
-}
-
-// Todoを準備するヘルパー関数
-func (c Controller) prepareTodo(title, content, dueDateStr, completedDateStr string) (entities.Todo, error) {
-	const layout = "2006-01-02"
-	var dueDate, completedDate *time.Time
-
-	// DueDateの処理
-	if dueDateStr != "" {
-		t, err := time.Parse(layout, dueDateStr)
-		if err != nil {
-			return entities.Todo{}, fmt.Errorf("Invalid due date format.")
-		}
-		dueDate = &t
-	}
-
-	// CompletedDateの処理
-	if completedDateStr != "" {
-		t, err := time.Parse(layout, completedDateStr)
-		if err != nil {
-			return entities.Todo{}, fmt.Errorf("Invalid due date format.")
-		}
-		completedDate = &t
-	}
-
-	// Todo構造体にデータを詰める
-	todo := entities.Todo{
-		Title:         title,
-		Content:       content,
-		DueDate:       dueDate,
-		CompletedDate: completedDate,
-		CreatedAt:     time.Now(), // 作成日時を現在の時刻で設定
-	}
-	return todo, nil
 }
 
 // todoの更新
