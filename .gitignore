@@ -13,5 +13,5 @@
 *.mp3
 *.wav
 
-mysql_docker/data/*
+mysql_docker/data/
 app/src/src
