@@ -1,2 +1,17 @@
 .DS_Store
 .idea
+# バイナリファイルのパターン
+*.bin
+*.exe
+*.dll
+*.jpg
+*.png
+*.gif
+*.zip
+*.tar
+*.mp4
+*.mp3
+*.wav
+
+mysql_docker/data/*
+app/src/src
