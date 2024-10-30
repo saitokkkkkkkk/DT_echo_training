@@ -1,6 +1,8 @@
 module app
 
-go 1.17
+go 1.23
+
+toolchain go1.23.2
 
 require (
 	github.com/go-playground/validator/v10 v10.22.1
@@ -15,6 +17,8 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
+	github.com/gorilla/securecookie v1.1.2 // indirect
+	github.com/gorilla/sessions v1.4.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.4 // indirect
 	github.com/labstack/gommon v0.2.9 // indirect

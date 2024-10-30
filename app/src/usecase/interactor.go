@@ -10,9 +10,6 @@ type Interactor struct {
 	Repository Repository
 }
 
-// アプリケーション固有のビジネスルール
-// このファイルでは取得したデータを組み合わせたりしてユースケースを実現する
-
 // todo一覧取得
 func (i Interactor) GetAllTodos() (todos []entities.Todo, err error) {
 
@@ -20,20 +17,19 @@ func (i Interactor) GetAllTodos() (todos []entities.Todo, err error) {
 }
 
 // todo取得
-func (i Interactor) GetTodoByID(id int64) (entities.Todo, error) {
+func (i Interactor) GetTodoByID(id int) (entities.Todo, error) {
 
 	return i.Repository.GetTodoByID(id)
 }
 
 // 新規todo保存
 func (i Interactor) CreateTodo(todo entities.Todo) error {
-	// Todoを保存するためのロジックをここに書く
+
 	return i.Repository.CreateTodo(todo)
 }
 
-// todoのステータスを更新
+// Todoのステータスを更新
 func (i *Interactor) UpdateTodo(todo entities.Todo) error {
-
 	return i.Repository.UpdateTodo(todo)
 }
 
@@ -45,11 +41,13 @@ func (i *Interactor) DeleteTodo(id int64) error {
 
 // todo一括削除
 func (i *Interactor) BulkDeleteTodos() error {
-	return i.Repository.BulkDeleteTodos()
+	// 条件をインタラクタで定義（リポジトリに書いた方が良いのか）
+	condition := "completed_date IS NOT NULL"
+	return i.Repository.BulkDeleteTodos(condition)
 }
 
 // done, undoneのステータス更新
-func (i *Interactor) UpdateTodoStatus(id int64, status string) error {
+func (i *Interactor) UpdateTodoStatus(id int, status string) error {
 	if status == "done" {
 		return i.Repository.SetCompletedAt(id, time.Now())
 	} else if status == "undone" {

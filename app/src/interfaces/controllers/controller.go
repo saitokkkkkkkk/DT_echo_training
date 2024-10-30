@@ -5,6 +5,7 @@ import (
 	"app/src/infrastructure/sqlhandler"
 	"app/src/usecase"
 	"fmt"
+	"github.com/gorilla/sessions"
 	"github.com/labstack/echo/v4"
 	"log"
 	"net/http"
@@ -28,57 +29,97 @@ func NewController(sqlhandler *sqlhandler.SqlHandler) *Controller {
 	}
 }
 
-// todo一覧表示
-func (c Controller) Index(ctx echo.Context) error {
-	todos, err := c.Interactor.GetAllTodos()
-	if err != nil {
-		log.Print(err)
-		return ctx.Render(http.StatusInternalServerError, "todo_list.html", nil)
-	}
-
-	// 完了したTodoが1つ以上あるか確認
-	hasCompleted := false
-	for _, todo := range todos {
-		if todo.CompletedDate != nil {
-			hasCompleted = true
-			break
-		}
-	}
-
-	// todosをマップに変換して渡す
-	return ctx.Render(http.StatusOK, "todo_list.html", map[string]interface{}{
-		"Todos":        todos,
-		"HasCompleted": hasCompleted, // 完了済みTodoが1つ以上あるかを渡す
-	})
-}
-
-// todo詳細表示
-func (c Controller) ShowTodoDetails(ctx echo.Context) error {
-	id, err := strconv.Atoi(ctx.Param("id")) // URLからIDを取得
+// todoの編集画面の表示（オッケー）
+func (c Controller) ShowTodoEdit(ctx echo.Context) error {
+	// URLからIDを取得
+	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		log.Print(err)
 		return ctx.String(http.StatusBadRequest, "Invalid ID")
 	}
 
-	todo, err := c.Interactor.GetTodoByID(int64(id)) // Interactorを使ってTodoを取得
+	// Todo取得
+	todo, err := c.Interactor.GetTodoByID(id)
 	if err != nil {
 		log.Print(err)
 		return ctx.String(http.StatusNotFound, "Todo not found")
 	}
 
-	return ctx.Render(http.StatusOK, "todo_detail.html", todo) // 詳細表示用のHTMLを返す
+	return ctx.Render(http.StatusOK, "todo_edit.html", todo) // 編集画面のHTMLを返す
+}
+
+// todo詳細表示（オッケー）
+func (c Controller) ShowTodoDetails(ctx echo.Context) error {
+	// URLからIDを取得
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		log.Print(err)
+		return ctx.String(http.StatusBadRequest, "Invalid ID")
+	}
+
+	// todo取得
+	todo, err := c.Interactor.GetTodoByID(id)
+	if err != nil {
+		log.Print(err)
+		return ctx.String(http.StatusNotFound, "Todo not found")
+	}
+
+	return ctx.Render(http.StatusOK, "todo_detail.html", todo)
+}
+
+// 一括削除（オッケー）
+func (c Controller) BulkDeleteTodos(ctx echo.Context) error {
+	// Interactorを呼ぶ
+	err := c.Interactor.BulkDeleteTodos()
+	if err != nil {
+		return ctx.String(http.StatusInternalServerError, "Failed to delete done Todo")
+	}
+
+	// セッションを取得
+	session := ctx.Get("session").(*sessions.Session)
+	// メッセージをセッションに設定
+	session.Values["message"] = "All completed todos have been deleted."
+	// セッションを保存
+	if err := session.Save(ctx.Request(), ctx.Response()); err != nil {
+		return err
+	}
+
+	// 一覧画面にリダイレクト
+	return ctx.Redirect(http.StatusSeeOther, "/todos")
 }
 
 // 新規todoの保存
 func (c Controller) CreateTodo(ctx echo.Context) error {
-
 	// フォームから送信されたデータを取得
 	title := ctx.FormValue("title")
 	content := ctx.FormValue("content")
 	dueDateStr := ctx.FormValue("due_date")
 	completedDateStr := ctx.FormValue("completed_date")
 
-	// 日付のフォーマットを指定
+	// Todo構造体を作成
+	todo, err := c.prepareTodo(title, content, dueDateStr, completedDateStr)
+	if err != nil {
+		return ctx.String(http.StatusBadRequest, err.Error())
+	}
+
+	// インタラクターを呼び出してTodoを保存
+	if err := c.Interactor.CreateTodo(todo); err != nil {
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	// セッションを取得
+	session := ctx.Get("session").(*sessions.Session)
+	session.Values["message"] = "Todo created successfully."
+	if err := session.Save(ctx.Request(), ctx.Response()); err != nil {
+		return err
+	}
+
+	// 一覧画面にリダイレクト
+	return ctx.Redirect(http.StatusSeeOther, "/todos")
+}
+
+// Todoを準備するヘルパー関数
+func (c Controller) prepareTodo(title, content, dueDateStr, completedDateStr string) (entities.Todo, error) {
 	const layout = "2006-01-02"
 	var dueDate, completedDate *time.Time
 
@@ -86,7 +127,7 @@ func (c Controller) CreateTodo(ctx echo.Context) error {
 	if dueDateStr != "" {
 		t, err := time.Parse(layout, dueDateStr)
 		if err != nil {
-			return ctx.String(http.StatusBadRequest, "無効な期限日フォーマットです")
+			return entities.Todo{}, fmt.Errorf("Invalid due date format.")
 		}
 		dueDate = &t
 	}
@@ -95,12 +136,12 @@ func (c Controller) CreateTodo(ctx echo.Context) error {
 	if completedDateStr != "" {
 		t, err := time.Parse(layout, completedDateStr)
 		if err != nil {
-			return ctx.String(http.StatusBadRequest, "無効な完了日フォーマットです")
+			return entities.Todo{}, fmt.Errorf("Invalid due date format.")
 		}
 		completedDate = &t
 	}
 
-	// Todo構造体にフォームデータを詰める
+	// Todo構造体にデータを詰める
 	todo := entities.Todo{
 		Title:         title,
 		Content:       content,
@@ -108,39 +149,30 @@ func (c Controller) CreateTodo(ctx echo.Context) error {
 		CompletedDate: completedDate,
 		CreatedAt:     time.Now(), // 作成日時を現在の時刻で設定
 	}
-
-	// 詰めたtodoをインタラクターに渡して呼ぶ
-	if err := c.Interactor.CreateTodo(todo); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-	}
-
-	// 成功した場合は/todosにリダイレクト
-	return ctx.Redirect(http.StatusFound, "/todos")
+	return todo, nil
 }
 
 // todoの更新
 func (c Controller) UpdateTodo(ctx echo.Context) error {
-
 	// フォームから送信されたデータを取得
 	title := ctx.FormValue("title")
 	content := ctx.FormValue("content")
 	dueDateStr := ctx.FormValue("due_date")
 	completedDateStr := ctx.FormValue("completed_date")
 
-	// URLからtodoのIDを取得
+	// URLからtodoのIDを取得して整数に変換
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		log.Print(err)
 		return ctx.String(http.StatusBadRequest, "Invalid ID")
 	}
 
 	// 更新するTodoの既存データを取得
-	todo, err := c.Interactor.GetTodoByID(int64(id))
+	todo, err := c.Interactor.GetTodoByID(id)
 	if err != nil {
 		return ctx.String(http.StatusInternalServerError, "Failed to find Todo")
 	}
 
-	// タイトルと内容を更新
+	// 更新後のタイトルと内容をtodoに格納
 	todo.Title = title
 	todo.Content = content
 
@@ -148,7 +180,6 @@ func (c Controller) UpdateTodo(ctx echo.Context) error {
 	if dueDateStr != "" {
 		dueDate, err := time.Parse("2006-01-02", dueDateStr)
 		if err != nil {
-			log.Print(err)
 			return ctx.String(http.StatusBadRequest, "Invalid Due Date format")
 		}
 		todo.DueDate = &dueDate
@@ -162,7 +193,6 @@ func (c Controller) UpdateTodo(ctx echo.Context) error {
 	if completedDateStr != "" {
 		completedDate, err := time.Parse("2006-01-02", completedDateStr)
 		if err != nil {
-			log.Print(err)
 			return ctx.String(http.StatusBadRequest, "Invalid Completed Date format")
 		}
 		todo.CompletedDate = &completedDate
@@ -178,25 +208,17 @@ func (c Controller) UpdateTodo(ctx echo.Context) error {
 		return ctx.String(http.StatusInternalServerError, "Failed to update Todo")
 	}
 
-	// 更新後、一覧ページにリダイレクト
+	// セッションを取得
+	session := ctx.Get("session").(*sessions.Session)
+	// メッセージをセッションに設定
+	session.Values["message"] = "Todo has been successfully updated."
+	// セッションを保存
+	if err := session.Save(ctx.Request(), ctx.Response()); err != nil {
+		return err
+	}
+
+	// 一覧画面にリダイレクト
 	return ctx.Redirect(http.StatusSeeOther, "/todos")
-}
-
-// todoの編集画面の表示
-func (c Controller) ShowTodoEdit(ctx echo.Context) error {
-	id, err := strconv.Atoi(ctx.Param("id")) // URLからIDを取得
-	if err != nil {
-		log.Print(err)
-		return ctx.String(http.StatusBadRequest, "Invalid ID")
-	}
-
-	todo, err := c.Interactor.GetTodoByID(int64(id)) // Interactorを使ってTodoを取得
-	if err != nil {
-		log.Print(err)
-		return ctx.String(http.StatusNotFound, "Todo not found")
-	}
-
-	return ctx.Render(http.StatusOK, "todo_edit.html", todo) // 編集画面のHTMLを返す
 }
 
 // todo削除
@@ -214,50 +236,37 @@ func (c Controller) DeleteTodo(ctx echo.Context) error {
 		return ctx.String(http.StatusInternalServerError, "Failed to delete Todo")
 	}
 
-	/* セッションを取得
+	// セッションを取得
 	session := ctx.Get("session").(*sessions.Session)
-	// 成功メッセージをセッションに設定
-	session.Values["message"] = "Deleted successfully"
-	session.Save(ctx.Request(), ctx.Response())*/
-
-	// 成功時、Todo一覧にリダイレクト
-	return ctx.Redirect(http.StatusSeeOther, "/todos")
-}
-
-// done todo 一括削除
-func (c Controller) BulkDeleteTodos(ctx echo.Context) error {
-	// Interactorを呼ぶ
-	err := c.Interactor.BulkDeleteTodos()
-	if err != nil {
-		return ctx.String(http.StatusInternalServerError, "Failed to delete done Todo")
+	// メッセージをセッションに設定
+	session.Values["message"] = "Todo has been successfully deleted."
+	// セッションを保存
+	if err := session.Save(ctx.Request(), ctx.Response()); err != nil {
+		return err
 	}
 
-	// 一括削除成功後、Todo一覧にリダイレクト
+	// 一覧画面にリダイレクト
 	return ctx.Redirect(http.StatusSeeOther, "/todos")
 }
 
-// doneとundoneのステータス更新
+// doneとundoneのステータス更新 ⇨ 一覧画面表示
 func (c Controller) UpdateTodoStatus(ctx echo.Context) error {
-	// URLからidを取得
-	idStr := ctx.Param("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		fmt.Println("Invalid ID:", idStr)
-		return ctx.JSON(http.StatusBadRequest, map[string]interface{}{
-			"ok":    false,
-			"error": "Invalid ID",
-		})
-	}
 
-	// int⇨int64にする
-	todoId := int64(id)
-
-	// 変更されたステータスをリクエストボディから取得して構造体にバインド
+	// 変更されたステータスをリクエストボディ（json）から取得して構造体にバインド
 	var statusUpdate struct {
 		Status string `json:"status"`
 	}
 	if err := ctx.Bind(&statusUpdate); err != nil {
-		fmt.Println("Bind error:", err)
+		return ctx.JSON(http.StatusBadRequest, map[string]interface{}{
+			"ok":    false, //jsのokのとこに返る
+			"error": "Bind Error",
+		})
+	}
+
+	// URLからidを取得してintに
+	idStr := ctx.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
 		return ctx.JSON(http.StatusBadRequest, map[string]interface{}{
 			"ok":    false,
 			"error": "Invalid ID",
@@ -265,9 +274,8 @@ func (c Controller) UpdateTodoStatus(ctx echo.Context) error {
 	}
 
 	// インタラクターを使用してステータス更新
-	err = c.Interactor.UpdateTodoStatus(todoId, statusUpdate.Status)
+	err = c.Interactor.UpdateTodoStatus(id, statusUpdate.Status)
 	if err != nil {
-		fmt.Println("Update status error:", err)
 		return ctx.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"ok":    false,
 			"error": "Failed to update status",
@@ -277,7 +285,6 @@ func (c Controller) UpdateTodoStatus(ctx echo.Context) error {
 	// ステータス更新後に全てのTodoを取得
 	todos, err := c.Interactor.GetAllTodos()
 	if err != nil {
-		log.Print(err)
 		return ctx.JSON(http.StatusInternalServerError, map[string]interface{}{
 			"ok":    false,
 			"error": "Failed to fetch todos",
@@ -297,11 +304,42 @@ func (c Controller) UpdateTodoStatus(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, map[string]interface{}{
 		"ok":           true,
 		"status":       statusUpdate.Status,
-		"hasCompleted": hasCompleted, // 完了したTodoの状態を返す
+		"hasCompleted": hasCompleted, // 完了したTodoがあるかどうかを返却
 	})
 }
 
-/*会員登録の処理
-func (c Controller) RegisterUser(context echo.Context) error {
+// todo一覧表示
+func (c Controller) Index(ctx echo.Context) error {
+	// todoの取得
+	todos, err := c.Interactor.GetAllTodos()
+	if err != nil {
+		log.Print(err)
+		return ctx.Render(http.StatusInternalServerError, "todo_list.html", nil)
+	}
 
-}*/
+	// セッションの取得
+	session := ctx.Get("session").(*sessions.Session)
+	// メッセージを取得
+	message := session.Values["message"]
+	// メッセージを削除（=リクエストごとにメッセージがあれば設定）
+	delete(session.Values, "message")
+	if err := session.Save(ctx.Request(), ctx.Response()); err != nil {
+		return err
+	}
+
+	// 完了したTodoが1つ以上あるか確認
+	hasCompleted := false
+	for _, todo := range todos {
+		if todo.CompletedDate != nil {
+			hasCompleted = true
+			break
+		}
+	}
+
+	// マップに変換してデータを画面に渡す
+	return ctx.Render(http.StatusOK, "todo_list.html", map[string]interface{}{
+		"Todos":        todos,
+		"HasCompleted": hasCompleted, // 完了済みTodoが1つ以上あるかを渡す
+		"Message":      message,      // メッセージを渡す
+	})
+}

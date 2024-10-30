@@ -39,12 +39,4 @@ func SetRouting(e *echo.Echo) {
 
 	// done、undoneの更新
 	e.PUT("/todos/:id/status", controller.UpdateTodoStatus)
-
-	/* 会員登録画面の表示
-	e.GET("/register", func(c echo.Context) error {
-		return c.File("template/register.html")
-	})*/
-
-	/* 会員登録の処理
-	e.POST("/register", controller.RegisterUser)*/
 }

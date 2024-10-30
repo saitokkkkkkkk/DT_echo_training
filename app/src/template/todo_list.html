@@ -33,12 +33,15 @@
         </div>
     </div>
 
-    <!--メッセージがある時-->
-    {{ if .Message }}
-    <div id="message-box" class="alert alert-success" role="alert">
-        {{ .Message }}
+    <!--セッションにメッセージが存在している時-->
+    {{if .Message}}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{.Message}}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
     </div>
-    {{ end }}
+    {{end}}
 
     <!-- todoがある場合 -->
     {{ if .Todos }}
@@ -77,6 +80,7 @@
         {{ end }}
     </ul>
 
+    <!--ajaxではない時の一括削除ボタン-->
     {{ if .HasCompleted }}
     <div class="text-right my-2 d-flex justify-content-end">
         <form action="/todos/bulk-delete" method="POST" style="display: inline;" class="bulk-delete-form">
@@ -87,6 +91,7 @@
     </div>
     {{ end }}
 
+    <!--ajaxの時の一括削除ボタン-->
     <div class="text-right my-2 d-flex justify-content-end">
         <form action="/todos/bulk-delete" method="POST" style="display: inline;" class="bulk-delete-form">
             <button type="submit" class="btn btn-link text-secondary small bulk-delete-button" style="text-decoration: none; display: none;" onclick="confirmBulkDelete(event)">
@@ -107,42 +112,35 @@
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 <script>
-    //一括削除のconfirm
-    function confirmBulkDelete(event) {
-        event.preventDefault(); // デフォルトのフォーム送信を防ぐ
-
-        // 確認ボックスを表示
-        const confirmed = confirm('Are you sure you want to delete all completed tasks?');
-
-        if (confirmed) {
-            // ユーザーがOKを押した場合、親フォームを送信
-            const form = event.target.closest('form'); // ボタンが属するフォームを取得
-            form.submit();
-        }
-    }
 
     // ステータス変更の処理
     function toggleStatus(element) {
+        //todoのidと変更後のステータスを先に取得
         const todoId = element.getAttribute('data-id');
         const currentStatus = element.getAttribute('data-status');
         const newStatus = currentStatus === 'done' ? 'undone' : 'done';
 
+        // リクエストの送信
         fetch(`/todos/${todoId}/status`, {
             method: 'PUT',
+            //リクエストボディがjsonであるということ
             headers: {
                 'Content-Type': 'application/json',
             },
+            // 上の情報を詳細化。変更後のステータスをjson形式で持つ。
             body: JSON.stringify({ status: newStatus })
         })
             .then(response => {
-                if (!response.ok) {
+                if (!response.ok) { //レスポンスが200系でない時にtrue
                     throw new Error('Network response was not ok');
                 }
+                // 受け取ったjsonをjsで使用可能に。
                 return response.json();
             })
             .then(data => {
+                // コントローラから返却されてくるキーokがtrueの時
                 if (data.ok) {
-                    // ステータス更新
+                    // ステータスの表示を更新（elementはspanタグ）
                     element.innerText = newStatus;
                     element.setAttribute('data-status', newStatus);
 
@@ -150,14 +148,16 @@
                     const doneList = document.querySelector('.list-group:last-of-type');
                     const undoneList = document.querySelector('.list-group.mb-4');
 
+                    //element.classListでspanタグのクラスの操作、新しい状態のレコードを画面に挿入
                     if (newStatus === 'done') {
                         element.classList.remove('undone');
                         element.classList.add('done');
-                        //insertBefore()を使って、変更したレコードをdoneの最上部に移動させる
+                        //insertBeforeで、変更したレコードをdoneの最上部に移動
                         doneList.insertBefore(todoItem, doneList.firstChild);
                     } else {
                         element.classList.remove('done');
                         element.classList.add('undone');
+                        //appendChildで、変更したレコードをundoneの最下部に移動
                         undoneList.appendChild(todoItem);
                     }
 
@@ -177,18 +177,30 @@
                 console.error('Error:', error);
             });
     }
-    // 一括削除ボタンの表示、非表示のロジック
+
+    // 一括削除ボタンの表示、非表示
     function updateBulkDeleteButton(hasCompleted) {
+        // 画面から一括削除ボタンを取得（取得しないといけない ⇨ if文だとdomから削除してしまって取得できないから、cssのdisplay: none; を使用）
         const bulkDeleteButton = document.querySelector('.bulk-delete-button');
-        if (!bulkDeleteButton) {
-            console.warn('Bulk delete button not found.');
-            return; // ボタンの存在が認識されておらず、それに対してstyleを効かせられていない
-        }
 
         if (hasCompleted) {
             bulkDeleteButton.style.display = 'block'; // ボタンを表示
         } else {
             bulkDeleteButton.style.display = 'none'; // ボタンを非表示
+        }
+    }
+
+    //一括削除のconfirm
+    function confirmBulkDelete(event) {
+        event.preventDefault(); // デフォルトのフォーム送信を防ぐ
+
+        // 確認ボックスを表示
+        const confirmed = confirm('Are you sure you want to delete all completed tasks?');
+
+        if (confirmed) {
+            // ユーザーがOKを押した場合、親フォームを送信
+            const form = event.target.closest('form'); // ボタンが属するフォームを取得
+            form.submit();
         }
     }
 
