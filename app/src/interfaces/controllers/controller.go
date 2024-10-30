@@ -33,14 +33,12 @@ func (c Controller) ShowTodoEdit(ctx echo.Context) error {
 	// URLからIDを取得
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		log.Print(err)
 		return ctx.String(http.StatusBadRequest, "Invalid ID")
 	}
 
 	// Todo取得
 	todo, err := c.Interactor.GetTodoByID(id)
 	if err != nil {
-		log.Print(err)
 		return ctx.String(http.StatusNotFound, "Todo not found")
 	}
 
@@ -52,14 +50,12 @@ func (c Controller) ShowTodoDetails(ctx echo.Context) error {
 	// URLからIDを取得
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		log.Print(err)
 		return ctx.String(http.StatusBadRequest, "Invalid ID")
 	}
 
 	// todo取得
 	todo, err := c.Interactor.GetTodoByID(id)
 	if err != nil {
-		log.Print(err)
 		return ctx.String(http.StatusNotFound, "Todo not found")
 	}
 
@@ -175,7 +171,6 @@ func (c Controller) UpdateTodo(ctx echo.Context) error {
 		log.Printf("パース後のデータ（DueDate）: %v (type=%T)", todo.DueDate, todo.DueDate)
 	} else {
 		todo.DueDate = nil // 日付が未入力の場合、nilにする
-		log.Println("Due date is empty, setting DueDate to nil")
 	}
 
 	// 完了日のフォーマット変換
@@ -185,15 +180,12 @@ func (c Controller) UpdateTodo(ctx echo.Context) error {
 			return ctx.String(http.StatusBadRequest, "Invalid Completed Date format")
 		}
 		todo.CompletedDate = &completedDate
-		log.Printf("パース後のデータ（CompletedDate）: %v (type=%T)", todo.CompletedDate, todo.CompletedDate)
 	} else {
 		todo.CompletedDate = nil // 日付が未入力の場合、nilにする
-		log.Println("Completed date is empty, setting CompletedDate to nil")
 	}
 
 	// Interactorを使用してTodoを更新
 	if err := c.Interactor.UpdateTodo(todo); err != nil {
-		log.Print(err)
 		return ctx.String(http.StatusInternalServerError, "Failed to update Todo")
 	}
 
@@ -302,7 +294,6 @@ func (c Controller) Index(ctx echo.Context) error {
 	// todoの取得
 	todos, err := c.Interactor.GetAllTodos()
 	if err != nil {
-		log.Print(err)
 		return ctx.Render(http.StatusInternalServerError, "todo_list.html", nil)
 	}
 
